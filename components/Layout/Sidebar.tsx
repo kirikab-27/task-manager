@@ -6,7 +6,7 @@ interface SidebarProps {
   viewMode: 'kanban' | 'list'
   setViewMode: (mode: 'kanban' | 'list') => void
   activeSection?: 'focus' | 'tags' | 'todos' | 'settings'
-  setActiveSection?: (section: 'focus' | 'tags' | 'todos' | 'settings') => void
+  setActiveSection?: (section: 'focus' | 'tags' | 'todos' | 'settings' | undefined) => void
 }
 
 export function Sidebar({ viewMode, setViewMode, activeSection, setActiveSection }: SidebarProps) {
