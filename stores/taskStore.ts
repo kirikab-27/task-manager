@@ -59,14 +59,26 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   addTask: async (input) => {
+    // TODOリストから追加された場合は自動的にTODOカラムに配置
+    let boardColumnId = input.boardColumnId
+    let status = input.status || 'todo'
+
+    if (!boardColumnId && status === 'todo') {
+      boardColumnId = 'column-1' // TODOカラム
+    } else if (!boardColumnId && status === 'in_progress') {
+      boardColumnId = 'column-2' // 進行中カラム
+    } else if (!boardColumnId && status === 'done') {
+      boardColumnId = 'column-3' // 完了カラム
+    }
+
     const newTask: Task = {
       id: Date.now().toString(),
       title: input.title,
       description: input.description,
-      status: input.status || 'todo',
+      status,
       priority: input.priority || 3,
       dueDate: input.dueDate,
-      boardColumnId: input.boardColumnId,
+      boardColumnId,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -78,11 +90,27 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
   updateTask: async (id, input) => {
     set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === id
-          ? { ...task, ...input, updatedAt: new Date() }
-          : task
-      )
+      tasks: state.tasks.map((task) => {
+        if (task.id !== id) return task
+
+        let updates = { ...input }
+
+        // ステータスが変更された場合、対応するカラムも更新
+        if (input.status && !input.boardColumnId) {
+          if (input.status === 'todo') {
+            updates.boardColumnId = 'column-1'
+            updates.completedAt = undefined
+          } else if (input.status === 'in_progress') {
+            updates.boardColumnId = 'column-2'
+            updates.completedAt = undefined
+          } else if (input.status === 'done') {
+            updates.boardColumnId = 'column-3'
+            updates.completedAt = new Date()
+          }
+        }
+
+        return { ...task, ...updates, updatedAt: new Date() }
+      })
     }))
   },
 
@@ -93,10 +121,32 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   moveTask: async (taskId, columnId, position) => {
+    // カラムIDに基づいてステータスも更新
+    let newStatus: 'todo' | 'in_progress' | 'done' = 'todo'
+    let completedAt: Date | undefined = undefined
+
+    if (columnId === 'column-1') {
+      newStatus = 'todo'
+      completedAt = undefined
+    } else if (columnId === 'column-2') {
+      newStatus = 'in_progress'
+      completedAt = undefined
+    } else if (columnId === 'column-3') {
+      newStatus = 'done'
+      completedAt = new Date()
+    }
+
     set((state) => ({
       tasks: state.tasks.map((task) =>
         task.id === taskId
-          ? { ...task, boardColumnId: columnId, position, updatedAt: new Date() }
+          ? {
+              ...task,
+              boardColumnId: columnId,
+              position,
+              status: newStatus,
+              completedAt: completedAt || task.completedAt,
+              updatedAt: new Date()
+            }
           : task
       )
     }))
@@ -109,6 +159,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           ? {
               ...task,
               status: 'done' as const,
+              boardColumnId: 'column-3', // 完了カラムに移動
               completedAt: new Date(),
               updatedAt: new Date()
             }
