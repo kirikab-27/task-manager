@@ -62,6 +62,7 @@ export interface UpdateTaskInput {
   status?: 'todo' | 'in_progress' | 'done' | 'archived'
   priority?: number
   dueDate?: Date | null
+  completedAt?: Date | null
   boardColumnId?: string | null
   position?: number
 }
