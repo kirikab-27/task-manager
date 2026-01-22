@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Task {
+  id               String    @id @default(cuid())
+  title            String
+  description      String?
+  status           String    @default("todo")
+  priority         Int       @default(3)
+  dueDate          DateTime?
+  reminderDate     DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  position         Int?
+  boardColumnId    String?
+  parentTaskId     String?
+  estimatedMinutes Int?
+  actualMinutes    Int?
+
+  boardColumn      BoardColumn? @relation(fields: [boardColumnId], references: [id], onDelete: SetNull)
+  parentTask       Task?        @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks         Task[]       @relation("SubTasks")
+  tags             TaskTag[]
+  timeEntries      TimeEntry[]
+  codeTodos        CodeTodo[]
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([boardColumnId])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  color     String?
+  icon      String?
+  createdAt DateTime  @default(now())
+
+  tasks     TaskTag[]
+}
+
+model TaskTag {
+  taskId String
+  tagId  String
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+}
+
+model Board {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  boardType   String        @default("kanban")
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  columns     BoardColumn[]
+}
+
+model BoardColumn {
+  id        String   @id @default(cuid())
+  boardId   String
+  name      String
+  position  Int
+  color     String?
+  wipLimit  Int?
+  createdAt DateTime @default(now())
+
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+}
+
+model GitRepo {
+  id         String     @id @default(cuid())
+  path       String     @unique
+  name       String
+  lastScanAt DateTime?
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+
+  codeTodos  CodeTodo[]
+}
+
+model CodeTodo {
+  id          String    @id @default(cuid())
+  repoId      String
+  filePath    String
+  lineNumber  Int
+  todoType    String
+  content     String
+  author      String?
+  commitHash  String?
+  taskId      String?
+  detectedAt  DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  repo        GitRepo   @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  task        Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([repoId, filePath])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model TimeEntry {
+  id               String    @id @default(cuid())
+  taskId           String
+  startTime        DateTime
+  endTime          DateTime?
+  durationMinutes  Int?
+  notes            String?
+  createdAt        DateTime  @default(now())
+
+  task             Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
