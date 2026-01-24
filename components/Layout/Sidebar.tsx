@@ -1,15 +1,27 @@
 'use client'
 
-import { LayoutGrid, List, Calendar, Tag, Settings, GitBranch } from 'lucide-react'
+import { LayoutGrid, List, Calendar, Tag, Settings, GitBranch, X } from 'lucide-react'
+import { useEffect } from 'react'
 
 interface SidebarProps {
   viewMode: 'kanban' | 'list'
   setViewMode: (mode: 'kanban' | 'list') => void
   activeSection?: 'focus' | 'tags' | 'todos' | 'settings'
   setActiveSection?: (section: 'focus' | 'tags' | 'todos' | 'settings' | undefined) => void
+  isOpen?: boolean
+  onClose?: () => void
 }
 
-export function Sidebar({ viewMode, setViewMode, activeSection, setActiveSection }: SidebarProps) {
+export function Sidebar({ viewMode, setViewMode, activeSection, setActiveSection, isOpen = false, onClose }: SidebarProps) {
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && onClose) {
+        onClose()
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [onClose])
   const menuItems = [
     {
       icon: LayoutGrid,
@@ -33,8 +45,35 @@ export function Sidebar({ viewMode, setViewMode, activeSection, setActiveSection
   ]
 
   return (
-    <aside className="w-64 border-r border-border bg-card">
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`
+          fixed md:relative
+          w-64
+          h-full
+          border-r border-border
+          bg-card
+          z-50
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
       <div className="p-4">
+        <div className="flex items-center justify-between mb-6 md:hidden">
+          <h2 className="text-lg font-semibold">メニュー</h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-md hover:bg-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
         <div className="mb-6">
           <h2 className="mb-2 px-2 text-sm font-semibold text-muted-foreground">
             ビュー
@@ -47,6 +86,9 @@ export function Sidebar({ viewMode, setViewMode, activeSection, setActiveSection
                   setViewMode(item.value)
                   if (setActiveSection) {
                     setActiveSection(undefined)
+                  }
+                  if (onClose && window.innerWidth < 768) {
+                    onClose()
                   }
                 }}
                 className={`flex w-full items-center rounded-md px-2 py-2 text-sm font-medium transition-colors ${
@@ -74,6 +116,9 @@ export function Sidebar({ viewMode, setViewMode, activeSection, setActiveSection
                   if (setActiveSection) {
                     setActiveSection(item.value)
                   }
+                  if (onClose && window.innerWidth < 768) {
+                    onClose()
+                  }
                 }}
                 className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-sm font-medium transition-colors ${
                   activeSection === item.value
@@ -100,5 +145,6 @@ export function Sidebar({ viewMode, setViewMode, activeSection, setActiveSection
         </div>
       </div>
     </aside>
+    </>
   )
 }

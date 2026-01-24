@@ -14,6 +14,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
   const [activeSection, setActiveSection] = useState<'focus' | 'tags' | 'todos' | 'settings' | undefined>()
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const { initialize: initializeTasks } = useTaskStore()
   const { initialize: initializeBoards } = useBoardStore()
 
@@ -28,18 +29,20 @@ export default function Home() {
   })
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background relative">
       <Sidebar
         viewMode={viewMode}
         setViewMode={setViewMode}
         activeSection={activeSection}
         setActiveSection={setActiveSection}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header onMenuClick={() => setIsSidebarOpen(true)} />
 
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
           {activeSection === 'focus' ? (
             <div className="max-w-4xl mx-auto">
               <h1 className="text-2xl font-bold mb-4">今日のフォーカス</h1>
